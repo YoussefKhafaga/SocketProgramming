@@ -1,0 +1,2 @@
+GET servertest.txt HTTP/1.0
+GET servertest.txt HTTP/1.1

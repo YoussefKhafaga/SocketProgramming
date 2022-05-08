@@ -16,7 +16,6 @@ def server():
 
 
 
-
 def client():
     serverName = "localhost"
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
