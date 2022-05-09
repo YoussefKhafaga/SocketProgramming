@@ -1,30 +1,57 @@
 import socket
-serverport = 1200
+import requests
+
+serverport = 80
 serverName = "localhost"
+
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
-    try:
-        clientSocket.connect((serverName, serverport))
-    except ValueError:
-        print("Caught exception : ", ValueError)
-        quit()
     file = open("client.txt", "r")
     for line in file:
         words = line.split()
         found = 1
+        httprequest = ""
+        if words[0]:
+            method = words[0]
+            httprequest = httprequest + method + " "
+        if words[1]:
+            filename = words[1]
+            httprequest = httprequest + filename + " HTTP/1.0\r\nHOST:"
+        if words[2]:
+            serverName = words[2]
+            httprequest = httprequest + serverName + ":"
+        if words[3]:
+            serverport = words[3]
+            httprequest = httprequest + serverport + "\r\n\r\n"
+
+        #create connection
+        try:
+            clientSocket.connect((serverName, int(serverport)))
+        except ValueError:
+            print("Caught exception : ", ValueError)
+            quit()
+
+        #post method
         if words[0] == "POST":
-            sentmessage = line
             try:
                 sentfile = open(words[1], "r")
-            except ValueError:
+            except OSError:
                 print("File not found ")
                 found = 0
-            clientSocket.sendto(sentmessage.encode('UTF-8'), (serverName, serverport))
             if found == 1:
-                clientSocket.sendto(sentfile.encode('UTF-8'), (serverName, serverport))
+                sentfile = sentfile.read()
+                httprequest = httprequest + sentfile + "\r\n"
+                print(httprequest)
+                clientSocket.send(httprequest.encode('UTF-8'))
                 print("File sent successfully ")
+                data = clientSocket.recv(2048)
+                print(data.decode())
+
+
+        #get method
         if words[0] == "GET":
-            sentobject = line
-            clientSocket.sendto(sentobject.encode('UTF-8'), (serverName, serverport))
-            data, clientAddress = clientSocket.recvfrom(2048)
+            clientSocket.send(bytes(httprequest, 'utf-8'))
+            data = clientSocket.recv(2048)
             print(data.decode("UTF-8"))
+
     clientSocket.close()
