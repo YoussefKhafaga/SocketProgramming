@@ -4,7 +4,6 @@ import requests
 serverport = 80
 serverName = "localhost"
 
-
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
     file = open("client.txt", "r")
     for line in file:
@@ -24,14 +23,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
             serverport = words[3]
             httprequest = httprequest + serverport + "\r\n\r\n"
 
-        #create connection
+       # print(filename)
+        # create connection
         try:
             clientSocket.connect((serverName, int(serverport)))
         except ValueError:
             print("Caught exception : ", ValueError)
             quit()
 
-        #post method
+        # post method
         if words[0] == "POST":
             try:
                 sentfile = open(words[1], "r")
@@ -47,8 +47,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
                 data = clientSocket.recv(2048)
                 print(data.decode())
 
-
-        #get method
+        # get method
         if words[0] == "GET":
             clientSocket.send(bytes(httprequest, 'utf-8'))
             data = clientSocket.recv(2048)
