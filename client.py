@@ -1,5 +1,5 @@
 import socket
-import requests
+import cv2
 
 serverport = 80
 serverName = "localhost"
@@ -17,12 +17,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
         if words[1]:
             filename = words[1]
             httprequest = httprequest + filename + " HTTP/1.0\r\nHOST:"
-        if words[2]:
+        if len(words) == 3:
             serverName = words[2]
             httprequest = httprequest + serverName + ":"
-        if words[3]:
+        else:
+            httprequest = httprequest + serverName + ":"
+        if len(words) == 4:
             serverport = words[3]
-            httprequest = httprequest + serverport + "\r\n\r\n"
+            httprequest = httprequest + str(serverport) + "\r\n\r\n"
+        else:
+            httprequest = httprequest + str(serverport) + "\r\n\r\n"
 
         #create connection
         try:
@@ -34,15 +38,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
         #post method
         if words[0] == "POST":
             try:
-                sentfile = open(words[1], "r")
+                sentfile = open(words[1], "rb")
             except OSError:
                 print("File not found ")
                 found = 0
             if found == 1:
                 sentfile = sentfile.read()
-                httprequest = httprequest + sentfile + "\r\n"
-                print(httprequest)
-                clientSocket.send(httprequest.encode('UTF-8'))
+                httprequest = httprequest.encode('UTF-8') + sentfile + "\r\n".encode('UTF-8')
+                clientSocket.send(httprequest)
+                print(httprequest.decode('UTF-8'))
                 print("File sent successfully ")
                 data = clientSocket.recv(2048)
                 print(data.decode())
@@ -51,7 +55,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
         #get method
         if words[0] == "GET":
             clientSocket.send(bytes(httprequest, 'utf-8'))
-            data = clientSocket.recv(2048)
+            data = clientSocket.recv(4096)
             print(data.decode("UTF-8"))
-
     clientSocket.close()

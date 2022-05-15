@@ -1,1 +1,1 @@
-GET clienttest.txt localhost 80
+POST clienttest.txt
