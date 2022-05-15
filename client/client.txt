@@ -1,1 +1,2 @@
 GET clienttest.txt localhost 800
+GET clienttest.txt localhost

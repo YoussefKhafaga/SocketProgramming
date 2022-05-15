@@ -1,5 +1,6 @@
 import socket
 import threading
+from _thread import *
 
 
 def parse(header):
@@ -19,6 +20,28 @@ def parse(header):
     except:
         payload = 0
     return method, url, http_version, payload
+
+
+def pipelined(c):
+    print("Created new thread")
+    c.settimeout(10)
+    try:
+        while True:
+            data = c.recv(2048)
+            print("This is data", data)
+            if (data):
+                start_new_thread(pipelined, (c,))
+                response, requestType, filename, httpVersion = parse(data)
+                c.sendall(response)
+                break
+            if not data:
+                print("Client aborted,Closing connection.....")
+                c.close()
+                return
+    except socket.timeout as e:
+        # connection closed
+        print('Timed Out,Connection closed')
+        c.close()
 
 
 class ClientThread(threading.Thread):
@@ -43,6 +66,7 @@ class ClientThread(threading.Thread):
             if not data:
                 print("No data received")
                 break
+            start_new_thread(pipelined, (self.csocket,))
             method, url, http_version, payload = parse(data.rstrip())
             http_response = ""
             if method == "POST":
