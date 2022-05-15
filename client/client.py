@@ -1,9 +1,9 @@
 import socket
-import cv2
+import requests
 
-serverport = 80
+serverport = 800
 serverName = "localhost"
-
+cache = {}
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
     file = open("client.txt", "r")
@@ -16,45 +16,53 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
             httprequest = httprequest + method + " "
         if words[1]:
             filename = words[1]
-            httprequest = httprequest + filename + " HTTP/1.0\r\nHOST:"
-        if len(words) == 3:
+            httprequest = httprequest + filename + " HTTP/1.1\r\nHOST:"
+        if words[2]:
             serverName = words[2]
             httprequest = httprequest + serverName + ":"
-        else:
-            httprequest = httprequest + serverName + ":"
-        if len(words) == 4:
+        try:
             serverport = words[3]
-            httprequest = httprequest + str(serverport) + "\r\n\r\n"
-        else:
-            httprequest = httprequest + str(serverport) + "\r\n\r\n"
+            httprequest = httprequest + serverport + "\r\n\r\n"
+        except IndexError:
+            print("ss")
 
-        #create connection
+        print(httprequest)
+        # create connection
         try:
             clientSocket.connect((serverName, int(serverport)))
         except ValueError:
             print("Caught exception : ", ValueError)
             quit()
 
-        #post method
+        # post method
         if words[0] == "POST":
             try:
-                sentfile = open(words[1], "rb")
+                sentfile = open(words[1], "r")
             except OSError:
                 print("File not found ")
                 found = 0
             if found == 1:
                 sentfile = sentfile.read()
-                httprequest = httprequest.encode('UTF-8') + sentfile + "\r\n".encode('UTF-8')
-                clientSocket.send(httprequest)
-                print(httprequest.decode('UTF-8'))
+                httprequest = httprequest + sentfile + "\r\n"
+                print(httprequest)
+                clientSocket.send(httprequest.encode('UTF-8'))
                 print("File sent successfully ")
                 data = clientSocket.recv(2048)
                 print(data.decode())
 
-
-        #get method
+        # get method
         if words[0] == "GET":
             clientSocket.send(bytes(httprequest, 'utf-8'))
-            data = clientSocket.recv(4096)
-            print(data.decode("UTF-8"))
-    clientSocket.close()
+            data = clientSocket.recv(2048)
+            # print(data.decode("UTF-8"))
+            if filename in cache:
+                with open(filename, 'r') as f:
+                    print("File found in cache")
+                    print(f.read())
+            else:
+                print("File not found in cache")
+                with open(filename, 'w', ) as f:
+                    f.write(data.decode("utf-8"))
+                    cache.update({filename: filename})
+
+        # clientSocket.close()
