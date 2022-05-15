@@ -1,8 +1,5 @@
 import socket
-import sys
 import threading
-
-import requests
 
 
 def parse(header):
@@ -28,17 +25,22 @@ class ClientThread(threading.Thread):
     def __init__(self, clientAddress, clientsocket):
         threading.Thread.__init__(self)
         self.csocket = clientsocket
+        self.cAddress = clientAddress
         print("New connection added: ", clientAddress)
 
     def run(self):
-        print("Connection from : ")
-        # self.csocket.send(bytes("Hi, This is from Server..",'utf-8'))
-        msg = ''
         while True:
-            found=1
-            data = data1.recv(2048).decode()
-            # print(data)
-            method, url, http_version, payload = parse(data)
+            found = 1
+            try:
+                data = data1.recv(2048)
+            except socket.timeout:
+                print("Server timed out")
+                break
+            data = data.decode()
+            if not data:
+                print("No data received")
+                break
+            method, url, http_version, payload = parse(data.rstrip())
             http_response = ""
             if method == "POST":
                 http_response = http_version + " 200 OK\r\n\r\n"
@@ -53,20 +55,27 @@ class ClientThread(threading.Thread):
                 if found:
                     http_response = http_version + " 200 OK\r\n"
                     file = file.read()
-                    http_response = http_response + file + "\r\n"
+                    http_response = http_response + "GET clienttest.txt localhost 800" + "\r\n"
                     data1.send(http_response.encode('UTF-8'))
+                # print("Connection ended")
                 else:
                     http_response = http_version + " 404 Not Found\r\n"
                     data1.send(http_response.encode('UTF-8'))
-        serverSocket
+
+            if http_version == "HTTP/1.0":
+                break
+       # print(self.csocket)
+        self.csocket.close()
+       # print(self.csocket)
 
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
-    serverport = 80
-    serverSocket.bind(('', serverport))
-    serverSocket.listen()
-    print('The server is ready to receive\n')
-    while True:
-        data1, address = serverSocket.accept()
-        newthread = ClientThread(address, data1)
-        newthread.start()
+serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serverport = 800
+serverSocket.bind(('', serverport))
+serverSocket.listen()
+print('The server is ready to receive\n')
+while True:  # Keep the server running
+    data1, address = serverSocket.accept()
+    data1.settimeout(10)
+    newthread = ClientThread(address, data1)
+    newthread.start()

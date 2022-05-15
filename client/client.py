@@ -1,8 +1,9 @@
 import socket
 import requests
 
-serverport = 80
+serverport = 800
 serverName = "localhost"
+cache = {}
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
     file = open("client.txt", "r")
@@ -15,7 +16,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
             httprequest = httprequest + method + " "
         if words[1]:
             filename = words[1]
-            httprequest = httprequest + filename + " HTTP/1.0\r\nHOST:"
+            httprequest = httprequest + filename + " HTTP/1.1\r\nHOST:"
         if words[2]:
             serverName = words[2]
             httprequest = httprequest + serverName + ":"
@@ -23,7 +24,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
             serverport = words[3]
             httprequest = httprequest + serverport + "\r\n\r\n"
 
-       # print(filename)
+        print(httprequest)
         # create connection
         try:
             clientSocket.connect((serverName, int(serverport)))
@@ -53,4 +54,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
             data = clientSocket.recv(2048)
             print(data.decode("UTF-8"))
 
-    clientSocket.close()
+    #clientSocket.close()
