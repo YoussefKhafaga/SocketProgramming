@@ -5,20 +5,20 @@ from _thread import *
 
 def parse(header):
     B = header.split()
+    length = len(B)
     method = 0
     url = 0
     payload = 0
     http_version = 0
-    if B[0]:
-        method = B[0]
-    if B[1]:
-        url = B[1]
-    if B[2]:
-        http_version = B[2]
-    try:
-        payload = B[4]
-    except:
-        payload = 0
+    if length > 1:
+        method = B.pop(0)
+    if length > 2:
+        url = B.pop(0)
+    if length > 3:
+        http_version = B.pop(0)
+    if length > 4:
+        B.pop(0)
+        payload = " ".join(B)
     return method, url, http_version, payload
 
 
@@ -75,15 +75,21 @@ class ClientThread(threading.Thread):
 
             elif method == "GET":
                 try:
-                    file = open(url, "r")
+                    file = open(url, "rb")
+
                 except OSError:
                     found = 0
 
                 if found:
+                    type = url.split(".")[1]
+                    if type == 'png':
+                        file = open(url, "rb")
                     http_response = http_version + " 200 OK\r\n"
                     file = file.read()
-                    http_response = http_response + file + "\r\n"
-                    data1.send(http_response.encode('UTF-8'))
+                    type = type.encode()
+                    http_response = http_response.encode()
+                    http_response = http_response + file + type
+                    data1.send(http_response)
                 # print("Connection ended")
                 else:
                     http_response = http_version + " 404 Not Found\r\n"
