@@ -20,9 +20,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
         if words[2]:
             serverName = words[2]
             httprequest = httprequest + serverName + ":"
-        if words[3]:
+        try:
             serverport = words[3]
             httprequest = httprequest + serverport + "\r\n\r\n"
+        except IndexError:
+            print("ss")
 
         print(httprequest)
         # create connection
@@ -52,6 +54,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
         if words[0] == "GET":
             clientSocket.send(bytes(httprequest, 'utf-8'))
             data = clientSocket.recv(2048)
-            print(data.decode("UTF-8"))
+            # print(data.decode("UTF-8"))
+            if filename in cache:
+                with open(filename, 'r') as f:
+                    print("File found in cache")
+                    print(f.read())
+            else:
+                print("File not found in cache")
+                with open(filename, 'w', ) as f:
+                    f.write(data.decode("utf-8"))
+                    cache.update({filename: filename})
 
-    #clientSocket.close()
+        # clientSocket.close()

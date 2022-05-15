@@ -33,6 +33,9 @@ class ClientThread(threading.Thread):
             found = 1
             try:
                 data = data1.recv(2048)
+                # newthread = ClientThread(self.cAddress, self.csocket)
+                # newthread.start()
+
             except socket.timeout:
                 print("Server timed out")
                 break
@@ -55,7 +58,7 @@ class ClientThread(threading.Thread):
                 if found:
                     http_response = http_version + " 200 OK\r\n"
                     file = file.read()
-                    http_response = http_response + "GET clienttest.txt localhost 800" + "\r\n"
+                    http_response = http_response + file + "\r\n"
                     data1.send(http_response.encode('UTF-8'))
                 # print("Connection ended")
                 else:
@@ -64,9 +67,9 @@ class ClientThread(threading.Thread):
 
             if http_version == "HTTP/1.0":
                 break
-       # print(self.csocket)
+        # print(self.csocket)
         self.csocket.close()
-       # print(self.csocket)
+    # print(self.csocket)
 
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
