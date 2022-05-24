@@ -1,7 +1,7 @@
 import socket
 import threading
 from _thread import *
-
+import base64
 
 def parse(header):
     B = header.split()
@@ -27,12 +27,14 @@ def pipelined(c):
     c.settimeout(10)
     try:
         while True:
-            data = c.recv(2048)
-            print("This is data", data)
+            data = c.recv(102400)
+            print("This is data ", data)
             if (data):
                 start_new_thread(pipelined, (c,))
+                print(parse(data))
                 response, requestType, filename, httpVersion = parse(data)
                 c.sendall(response)
+                print()
                 break
             if not data:
                 print("Client aborted,Closing connection.....")
@@ -55,9 +57,7 @@ class ClientThread(threading.Thread):
         while True:
             found = 1
             try:
-                data = data1.recv(2048)
-                # newthread = ClientThread(self.cAddress, self.csocket)
-                # newthread.start()
+                data = data1.recv(102400)
 
             except socket.timeout:
                 print("Server timed out")
@@ -72,27 +72,31 @@ class ClientThread(threading.Thread):
             if method == "POST":
                 http_response = http_version + " 200 OK\r\n\r\n"
                 data1.send(http_response.encode('UTF-8'))
+                filename1 = url.split(".")
+                if filename1[1] == "png":
+                    payload = payload[1 :].encode("utf-8")
+                    payload = base64.b64decode(payload)
+                    with open(url, 'wb') as f:
+                        f.write(payload)
+                else:
+                    with open(url, 'wb') as f:
+                        f.write(payload.encode('utf-8'))
 
             elif method == "GET":
                 try:
                     file = open(url, "rb")
-
                 except OSError:
                     found = 0
 
                 if found:
-                    type = url.split(".")[1]
-                    if type == 'png':
-                        file = open(url, "rb")
-                    http_response = http_version + " 200 OK\r\n"
+                    http_response = http_version + " 200 OK\r\n\r\n"
                     file = file.read()
-                    type = type.encode()
                     http_response = http_response.encode()
-                    http_response = http_response + file + type
+                    http_response = http_response + file
                     data1.send(http_response)
                 # print("Connection ended")
                 else:
-                    http_response = http_version + " 404 Not Found\r\n"
+                    http_response = http_version + " 404 Not Found\r\n\r\n"
                     data1.send(http_response.encode('UTF-8'))
 
             if http_version == "HTTP/1.0":
@@ -103,7 +107,7 @@ class ClientThread(threading.Thread):
 
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serverport = 800
+serverport = 80
 serverSocket.bind(('', serverport))
 serverSocket.listen()
 print('The server is ready to receive\n')

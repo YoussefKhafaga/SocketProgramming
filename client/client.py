@@ -1,7 +1,8 @@
 import socket
 import requests
-
-serverport = 800
+import cv2
+import base64
+serverport = 80
 serverName = "localhost"
 cache = {}
 
@@ -28,7 +29,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
         else:
             httprequest = httprequest + str(serverport) + "\r\n\r\n"
 
-        print(httprequest)
+        #print(httprequest)
         # create connection
         try:
             clientSocket.connect((serverName, int(serverport)))
@@ -45,9 +46,17 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
                 found = 0
             if found == 1:
                 sentfile = sentfile.read()
-                httprequest = httprequest.encode('UTF-8') + sentfile + "\r\n".encode('UTF-8')
-                clientSocket.send(httprequest)
-                print(httprequest.decode('UTF-8'))
+                filename1 = filename.split(".")
+                httprequest1 = httprequest + "\r\n\r\n"
+                if filename1[1] != "png":
+                    httprequest = httprequest1 + sentfile.decode('utf-8')
+                    clientSocket.sendall(bytes(httprequest, 'utf-8'))
+                    print(httprequest)
+                else:
+                    sentfile = base64.b64encode(sentfile)
+                    httprequest = httprequest1 + str(sentfile)
+                    clientSocket.sendall(bytes(httprequest, 'utf-8'))
+                    print(httprequest1)
                 print("File sent successfully ")
                 data = clientSocket.recv(2048)
                 print(data.decode())
@@ -55,32 +64,37 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSocket:
         # get method
         if words[0] == "GET":
             clientSocket.send(bytes(httprequest, 'utf-8'))
-            data = clientSocket.recv(2048)
-            data = data.decode("UTF-8")
-            data = data.split()
-            type = data.pop()
-            data = " ".join(data)
-            print(data)
+            print(httprequest)
+            data = clientSocket.recv(102400)
+            data = data.split(b"\r\n\r\n")
+            response = data[0].decode('UTF-8')
+            filename1 = filename.split(".")
+            res = response
+            res1 = response.split(" ")
+            if res1[1] == "404":
+                print(response)
+                quit()
+            print(response)
             if filename in cache:
-                with open(filename, 'r') as f:
+                with open(filename, 'rb') as f:
                     print("File found in cache")
-                    if type != "png":
+                    if filename1[1] != "png":
                         print(f.read())
                     else:
                         img = cv2.imread(filename)
-                        cv2.imshow(img)
-                        cv2.waitkey(0)
+                        cv2.imshow('image', img)
+                        cv2.waitKey(0)
             else:
                 print("File not found in cache")
                 with open(filename, 'wb') as f:
-                    f.write(data)
+                    f.write(data[1])
                     cache.update({filename: filename})
-                    f = open(filename, 'r')
-                    if type != "png":
-                        print(f.read())
+                    f = open(filename, 'rb')
+                    if filename1[1] != "png":
+                        print(data[1].decode())
                     else:
                         img = cv2.imread(filename)
-                        cv2.imshow(img)
-                        cv2.waitkey(0)
+                        cv2.imshow('image', img)
+                        cv2.waitKey(0)
         print("---------------------------")
         # clientSocket.close()

@@ -1,1 +1,1 @@
-GET servertest.txt localhost 800
+POST instagram.png localhost 80
